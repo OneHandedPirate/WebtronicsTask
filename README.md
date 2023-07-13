@@ -42,7 +42,7 @@
    overwise:
    + Set up a new virtual environment, for example:
      ```
-     virtualenv venv .
+     virtualenv venv
      ```   
    + Activate it:
      ```
