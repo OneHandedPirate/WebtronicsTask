@@ -14,7 +14,9 @@ router = APIRouter(
 )
 
 
-@router.post('', status_code=status.HTTP_201_CREATED, response_model=schemas.UserResponse)
+@router.post('', status_code=status.HTTP_201_CREATED,
+             description='Create a new user object (registration)',
+             response_model=schemas.UserResponse)
 async def create_user(user: schemas.UserCreate, db: AsyncSession = Depends(session.get_async_session)):
     query = select(models.User).filter(models.User.email == cast(user.email, String))
     user_result = await db.execute(query)
@@ -37,7 +39,7 @@ async def create_user(user: schemas.UserCreate, db: AsyncSession = Depends(sessi
     return new_user
 
 
-@router.get('/{uuid}', response_model=schemas.UserResponse)
+@router.get('/{uuid}',description='Get the specific User object by its uuid', response_model=schemas.UserResponse)
 async def get_user(uuid: UUID,
                    db: AsyncSession = Depends(session.get_async_session)):
     query = select(models.User).filter(models.User.uuid == uuid)

@@ -11,7 +11,7 @@ from app.db.session import get_async_session
 router = APIRouter(tags=['Authentication'])
 
 
-@router.post('/login', response_model=schemas.Token)
+@router.post('/login', response_model=schemas.Token, description='Login for registered users')
 async def login(user_credentials: OAuth2PasswordRequestForm = Depends(),
                 db: AsyncSession = Depends(get_async_session)):
 

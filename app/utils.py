@@ -93,12 +93,14 @@ async def change_redis_on_vote(post_id: int, user_uuid, is_like: bool, db: Async
             if is_like:
                 pass
             else:
-                redis.set(vote_key, -1)
-                redis.decr(votes_result)
+                await redis.set(vote_key, -1)
+                await redis.decr(votes_result)
+                await redis.decr(votes_result)
         else:
             if not is_like:
                 pass
             else:
-                redis.set(vote_key, 1)
-                redis.incr(votes_result)
+                await redis.set(vote_key, 1)
+                await redis.incr(votes_result)
+                await redis.incr(votes_result)
 

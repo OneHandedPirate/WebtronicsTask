@@ -6,14 +6,17 @@ from app import schemas, oauth2, utils
 from app.db.models import User, Vote, Post
 from app.db.session import get_async_session
 
+from environ import POSTS_PER_PAGE
 
 router = APIRouter(
     prefix='/posts',
     tags=['Posts']
 )
 
+status.HTTP_400_BAD_REQUEST
 
 @router.post("", status_code=status.HTTP_201_CREATED,
+             description='Create a new post',
              response_model=schemas.PostResponse)
 async def create_post(post: schemas.PostCreate,
                       db: AsyncSession = Depends(get_async_session),
@@ -27,7 +30,9 @@ async def create_post(post: schemas.PostCreate,
     return post_response
 
 
-@router.get("/{post_id}", response_model=schemas.PostResponse)
+@router.get("/{post_id}",
+            description='Get post with provided id',
+            response_model=schemas.PostResponse)
 async def get_post(post_id: int, db: AsyncSession = Depends(get_async_session)):
     utils.check_int_value(post_id)
 
@@ -47,7 +52,9 @@ async def get_post(post_id: int, db: AsyncSession = Depends(get_async_session)):
     return post_response
 
 
-@router.get("", response_model=list[schemas.PostResponse])
+@router.get("",
+            description='Get paginated list of posts',
+            response_model=list[schemas.PostResponse])
 async def get_all_published_posts(page: int = 1,
                                   db: AsyncSession = Depends(get_async_session)):
     utils.check_int_value(page)
@@ -57,7 +64,7 @@ async def get_all_published_posts(page: int = 1,
                                    "be greater than or equal to 1.")
 
     stmt = select(Post).filter(
-        Post.published == cast(True, Boolean)).offset((page-1)*20).limit(20)
+        Post.published == cast(True, Boolean)).offset((page-1)*POSTS_PER_PAGE).limit(POSTS_PER_PAGE)
 
     result = await db.execute(stmt)
     posts = result.scalars()
@@ -69,7 +76,9 @@ async def get_all_published_posts(page: int = 1,
     return posts_response
 
 
-@router.put("/{post_id}", response_model=schemas.PostResponse)
+@router.put("/{post_id}",
+            description='Update a post. Only for author of the post',
+            response_model=schemas.PostResponse)
 async def update_post(post_id: int,
                       post: schemas.PostUpdate,
                       db: AsyncSession = Depends(get_async_session),
@@ -103,7 +112,8 @@ async def update_post(post_id: int,
     return updated_post
 
 
-@router.delete("/{post_id}")
+@router.delete("/{post_id}",
+               description='Delete a post. Only for author of the post.')
 async def delete_post(post_id: int,
                       db: AsyncSession = Depends(get_async_session),
                       current_user: User = Depends(oauth2.get_current_user)):
@@ -128,11 +138,14 @@ async def delete_post(post_id: int,
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.post('/vote')
+@router.post('/vote',
+             description='Like/dislike a post. Boolean is_like set to true '
+                         'is like, otherwise - dislike')
 async def like_post(post_id: int,
                     is_like: bool,
                     db: AsyncSession = Depends(get_async_session),
                     current_user: User = Depends(oauth2.get_current_user)):
+
     utils.check_int_value(post_id)
 
     post_stmt = select(Post).filter(Post.id == post_id)
