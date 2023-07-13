@@ -103,8 +103,8 @@
     ```
     async def verify_email(email: string):
         async with httpx.AsyncClient() as client:
-            response = await client.get(f"https://api.hunter.io/v2/email-verifier?email={email}&api_key=API_KEY")
+            response = await client.get(f"https://api.hunter.io/v2/email-verifier?email={email}&api_key={API_KEY}")
             data = response.json()
             if not data["data"]["status"] == "valid":
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalide email")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email")
     ``` 
