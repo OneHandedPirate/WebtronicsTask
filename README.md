@@ -87,7 +87,7 @@
    ```
 
 ### Endpoints description:
-`/login`, method=POST - login for the registered users with email and password.<br>
+`/login`, method=POST - login for the registered users with email and password. In response object (if credentials provided are valid) there is JWT token (access_token), which should be placed in the "Authorization" header along with "Bearer" word ("Authorization: Bearer <access_token>") in any request which requires authentication.<br>
 `/user`, method=POST - create a new user with email and password (registration).<br>
 `/user/{uuid}`, method=GET - get the user with the specified uuid.<br>
 `/posts`, method=POST - create a new post with the specified `title`, `content` and `published` (optional) values. Only for authorized users.<br>
@@ -95,7 +95,7 @@
 `/posts/{post_id}`, method=GET - get the specified post if it is `published`.<br>
 `/posts/{post_id}`, method=PUT - update the specified post. Only for its author. Since PUT is for updating all fields, all 3 values (`title`, `content` and `published`) should be provided.<br>
 `/posts/{post_id}`, method=DELETE - delete the specified post. Only for its author.<br>
-`/posts/vote`, method=POST - vote for the specified. Provided boolean value `is_like` defines whether it is a like (True) or dislike (False). Then there is some ugly redis magic to update the cashed value of result rating (likes - dislikes) and create or update Vote table entry, describing performed action. 
+`/posts/vote`, method=POST - vote for the specified. Provided boolean value `is_like` defines whether it is a like (True) or dislike (False). Then there is some ugly redis magic to update the cashed value of result rating (likes - dislikes) and create or update Vote table entry, describing performed action. Authentication is required. 
 
 ### Notes:
 * "Rating" field calculation in post response (whether it is an individual post or list of them) is rather tricky. First it looks up at redis for specific key (vote:{post_id}:result), if there is no such key then it looks up for all the entries in Vote table with the post_id. If there are no such entries - the redis value of vote:{post_id}:result is set to 0, otherwise it is calculated from those entries and all the Vote entries for the post is duplicated to redis (that is needed for like/dislike functionality to work correctly).
