@@ -34,7 +34,9 @@ def check_int_value(value: int):
 async def get_post_rating(post_id: int, db: AsyncSession) -> int:
     """Return post rating of a post from redis"""
 
-    vote_result = await redis.get(f'vote:{post_id}:result')
+    async with redis.client() as red:
+        vote_result = await red.get(f'vote:{post_id}:result')
+
     if vote_result:
         return vote_result
     else:
@@ -61,46 +63,49 @@ async def sync_redis(post_id: int, db: AsyncSession):
 
     stmt = select(Vote).where(Vote.post_id == post_id)
     votes = (await db.execute(stmt)).scalars().all()
+
     if not votes:
-        await redis.set(f'vote:{post_id}:result', 0)
+        async with redis.client() as red:
+            await red.set(f'vote:{post_id}:result', 0)
         return 0
 
     rating = 0
-    for vote in votes:
-        rating += (1 if vote.is_like else -1)
-        await redis.set(f'vote:{vote.post_id}:{vote.user_uuid}', 1 if vote.is_like else -1)
-    await redis.set(f'vote:{post_id}:result', rating)
+    async with redis.client() as red:
+        for vote in votes:
+            rating += (1 if vote.is_like else -1)
+            await red.set(f'vote:{vote.post_id}:{vote.user_uuid}', 1 if vote.is_like else -1)
+        await red.set(f'vote:{post_id}:result', rating)
 
     return rating
 
 
 async def change_redis_on_vote(post_id: int, user_uuid, is_like: bool, db: AsyncSession):
     """Ugly redis interactions on vote"""
+    async with redis.client() as red:
+        if not await red.keys(f'vote:{post_id}:*'):
+            await get_post_rating(post_id, db)
 
-    if not await redis.keys(f'vote:{post_id}:*'):
-        await get_post_rating(post_id, db)
+        vote_key = f'vote:{post_id}:{user_uuid}'
+        votes_result = f'vote:{post_id}:result'
 
-    vote_key = f'vote:{post_id}:{user_uuid}'
-    votes_result = f'vote:{post_id}:result'
+        vote_in_redis = await red.get(vote_key)
 
-    vote_in_redis = await redis.get(vote_key)
-
-    if not vote_in_redis:
-        await (redis.set(vote_key, 1) if is_like is True else redis.set(vote_key, -1))
-        await (redis.incr(votes_result) if is_like else redis.decr(votes_result))
-    else:
-        if int(vote_in_redis) == 1:
-            if is_like:
-                pass
-            else:
-                await redis.set(vote_key, -1)
-                await redis.decr(votes_result)
-                await redis.decr(votes_result)
+        if not vote_in_redis:
+            await (red.set(vote_key, 1) if is_like is True else red.set(vote_key, -1))
+            await (red.incr(votes_result) if is_like else red.decr(votes_result))
         else:
-            if not is_like:
-                pass
+            if int(vote_in_redis) == 1:
+                if is_like:
+                    pass
+                else:
+                    await red.set(vote_key, -1)
+                    await red.decr(votes_result)
+                    await red.decr(votes_result)
             else:
-                await redis.set(vote_key, 1)
-                await redis.incr(votes_result)
-                await redis.incr(votes_result)
+                if not is_like:
+                    pass
+                else:
+                    await red.set(vote_key, 1)
+                    await red.incr(votes_result)
+                    await red.incr(votes_result)
 
