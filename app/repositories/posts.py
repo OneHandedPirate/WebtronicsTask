@@ -19,8 +19,8 @@ class PostRepository(BaseDBRepository):
     async def get(self, id: int):
         utils.check_int_value(id)
 
-        stmt = select(Post).filter(Post.id == cast(id, Integer),
-                                   Post.published == cast(True, Boolean))
+        stmt = select(self.model).filter(self.model.id == cast(id, Integer),
+                                         self.model.published == cast(True, Boolean))
         result = await self.session.execute(stmt)
         post = result.scalar()
 
@@ -35,11 +35,10 @@ class PostRepository(BaseDBRepository):
         return post_response
 
     async def post(self, post: schemas.PostCreate, user_uuid):
-        new_post = Post(author_id=user_uuid, **post.model_dump())
+        new_post = self.model(author_id=user_uuid, **post.model_dump())
         self.session.add(new_post)
         await self.session.commit()
         await self.session.refresh(new_post)
-        print(new_post)
         post_response = utils.post_to_response(new_post, 0)
 
         return post_response
@@ -51,8 +50,8 @@ class PostRepository(BaseDBRepository):
                                 detail="Invalid page number. Page number must "
                                        "be greater than or equal to 1.")
 
-        stmt = select(Post).filter(
-            Post.published == cast(True, Boolean)).offset((page - 1) * PER_PAGE).limit(PER_PAGE)
+        stmt = select(self.model).filter(
+            self.model.published == cast(True, Boolean)).offset((page - 1) * PER_PAGE).limit(PER_PAGE)
 
         result = await self.session.execute(stmt)
         posts = result.scalars()
@@ -66,7 +65,7 @@ class PostRepository(BaseDBRepository):
     async def update(self, post_id, post, user_uuid):
         utils.check_int_value(post_id)
 
-        stmt = select(Post).filter(Post.id == cast(post_id, Integer))
+        stmt = select(self.model).filter(self.model.id == cast(post_id, Integer))
 
         result = await self.session.execute(stmt)
         post_to_update = result.scalar()
@@ -79,10 +78,10 @@ class PostRepository(BaseDBRepository):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail=f'Not authorized to perform requested action')
 
-        stmt_to_update = update(Post).where(
-            Post.id == cast(post_id, Integer)).values(title=post.title,
-                                                      content=post.content,
-                                                      published=post.published)
+        stmt_to_update = update(self.model).where(
+            self.model.id == cast(post_id, Integer)).values(title=post.title,
+                                                            content=post.content,
+                                                            published=post.published)
 
         await self.session.execute(stmt_to_update)
         await self.session.commit()
@@ -98,7 +97,7 @@ class PostRepository(BaseDBRepository):
     async def delete(self, post_id, user_uuid):
         utils.check_int_value(post_id)
 
-        stmt = select(Post).filter(Post.id == cast(post_id, Integer))
+        stmt = select(self.model).filter(self.model.id == cast(post_id, Integer))
         result = await self.session.execute(stmt)
         post = result.scalar()
 
@@ -110,6 +109,6 @@ class PostRepository(BaseDBRepository):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                                 detail=f'Not authorized to perform requested action')
 
-        stmt_to_delete = delete(Post).filter(Post.id == cast(post_id, Integer))
+        stmt_to_delete = delete(self.model).filter(self.model.id == cast(post_id, Integer))
         await self.session.execute(stmt_to_delete)
         await self.session.commit()
