@@ -63,7 +63,7 @@
     REDIS_DB - redis database<br>
     SECRET_KEY - secret key (used for creation and verification JWT tokens)<br>
     JWT_EXPIRATION_TIME - JWT token expiration time (in minutes)<br>
-    POSTS_PER_PAGE - int value used for pagination 
+    PER_PAGE - int value used for pagination 
     * If you don't plan to use real database and redis server and use docker I suggest using the following values in `.env`:<br>
         POSTGRES_USER - postgres<br>
         POSTGRES_PASSWORD - postgres<br>
@@ -89,9 +89,10 @@
 ### Endpoints description:
 `/login`, method=POST - login for the registered users with email and password. In response object (if credentials provided are valid) there is JWT token (access_token), which should be placed in the "Authorization" header along with "Bearer" word ("Authorization: Bearer <access_token>") in any request which requires authentication.<br>
 `/user`, method=POST - create a new user with email and password (registration).<br>
+`/user`, method=GET - get all users paginated.<br> 
 `/user/{uuid}`, method=GET - get the user with the specified uuid.<br>
 `/posts`, method=POST - create a new post with the specified `title`, `content` and `published` (optional) values. Only for authorized users.<br>
-`/posts`, method=GET - get first ${POST_PER_PAGE} posts from db with the `published` set to true. Optional query parameter for `page` for pagination.<br>
+`/posts`, method=GET - get first ${PER_PAGE} posts from db with the `published` set to true. Optional query parameter for `page` for pagination.<br>
 `/posts/{post_id}`, method=GET - get the specified post if it is `published`.<br>
 `/posts/{post_id}`, method=PUT - update the specified post. Only for its author. Since PUT is for updating all fields, all 3 values (`title`, `content` and `published`) should be provided.<br>
 `/posts/{post_id}`, method=DELETE - delete the specified post. Only for its author.<br>

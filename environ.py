@@ -19,4 +19,4 @@ REDIS_DB = os.getenv('REDIS_DB')
 SK = os.getenv('SECRET_KEY')
 JWT_EXPIRATION_TIME = int(os.getenv('JWT_EXPIRATION_TIME'))
 
-POSTS_PER_PAGE = int(os.getenv('POSTS_PER_PAGE'))
+PER_PAGE = int(os.getenv('PER_PAGE'))
